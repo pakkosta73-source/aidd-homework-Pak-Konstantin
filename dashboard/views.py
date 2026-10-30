@@ -6,6 +6,7 @@ from django.views.generic import CreateView, DeleteView, DetailView, ListView, U
 from .forms import ShareModelForm
 from .models import Share
 from .services.graph import get_graph
+from .services.market_data import get_last_data
 
 SUCCESS_URL = reverse_lazy("dashboard:index")
 
@@ -28,6 +29,23 @@ class ShareListView(ListView):
     template_name = "dashboard/list.html"
     paginate_by = 100
     ordering = ["name"]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        shares = self.get_queryset()
+        # Динамически загружаем цены для каждой акции
+        for share in shares:
+            try:
+                price, _ = get_last_data(share)
+                share.last_price = price
+                # Определяем тренд
+                if share.last_price is not None and share.is_trend_high is not None:
+                    share.is_trend_high = share.last_price >= (share._old_price if hasattr(share, '_old_price') else 0)
+                share._old_price = share.last_price
+            except Exception:
+                share.last_price = share.last_price  # оставляем цену из базы если API недоступен
+        context["share_list"] = shares
+        return context
 
 
 class ShareDetailView(DetailView):

@@ -2,6 +2,9 @@ import logging
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+load_dotenv()
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-me-in-production-!@#$%^&*()_+-=')
@@ -133,6 +136,7 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 TINKOFF_TOKEN = os.getenv('TINKOFF_TOKEN', '')
+USE_TINKOFF_MOCK = os.getenv('USE_TINKOFF_MOCK', 'False').lower() in ('true', '1', 'yes')
 
 """Celery Configuration Options"""
 CELERY_TIMEZONE = "Europe/Moscow"
