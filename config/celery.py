@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 
 from celery import Celery
 
@@ -13,6 +14,6 @@ app.autodiscover_tasks()
 app.conf.beat_schedule = {
     "update-prices-every-5-min": {
         "task": "dashboard.tasks.update_last_price",
-        "schedule": 300.0,
+        "schedule": timedelta(minutes=5),
     },
 }

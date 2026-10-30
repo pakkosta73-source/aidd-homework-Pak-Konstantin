@@ -4,6 +4,8 @@ from dashboard.models import Share
 
 
 class ShareSerializer(serializers.ModelSerializer):
+    """Сериализатор для REST API акций."""
+
     class Meta:
         model = Share
         fields = (

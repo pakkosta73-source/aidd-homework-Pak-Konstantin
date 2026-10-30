@@ -19,3 +19,6 @@ class Share(models.Model):
     class Meta:
         verbose_name = "Акция"
         verbose_name_plural = "Акции"
+
+    def __str__(self):
+        return f"{self.ticker} — {self.name}"

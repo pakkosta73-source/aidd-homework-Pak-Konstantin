@@ -1,32 +1,42 @@
 {% extends "dashboard/base.html" %}
 
 {% block title %}
-<title>Детальная информация</title>
+<title>{{ share.name }} — Детальная информация</title>
 {% endblock %}
 
 {% block content %}
-    <div class="row">
-    <div class="col3"></div>
-    <div class="col3">
-        Инструмент: {{ share.name }} <br>
-        Текущая цена: {{ share.last_price }} {{ share.currency }} <br>
-        Время последнего обновления: {{ share.updated_at }}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <h4>{{ share.name }}</h4>
+        <table class="table table-sm">
+            <tr>
+                <th>Тикер:</th>
+                <td>{{ share.ticker }}</td>
+            </tr>
+            <tr>
+                <th>ISIN:</th>
+                <td>{{ share.isin }}</td>
+            </tr>
+            <tr>
+                <th>Валюта:</th>
+                <td>{{ share.currency }}</td>
+            </tr>
+            <tr>
+                <th>Текущая цена:</th>
+                <td>{{ share.last_price }} {{ share.currency }}</td>
+            </tr>
+            <tr>
+                <th>Обновлено:</th>
+                <td>{{ share.updated_at }}</td>
+            </tr>
+        </table>
     </div>
-    <div class="col3"></div>
+</div>
+
+<div class="row justify-content-center mt-3">
+    <div class="col-md-6">
+        <h5>Исторические данные</h5>
+        {% autoescape off %}{{ plot_div }}{% endautoescape %}
     </div>
-
-
-      <div class="row mt-3">
-    <div class="col3"></div>
-    <div class="col3">
-    <h5>Исторические данные: </h5>
- {% autoescape off %}
-  {{ plot_div }}
-  {% endautoescape %}
-    </div>
-    <div class="col3"></div>
-    </div>
-
-
-
+</div>
 {% endblock %}
