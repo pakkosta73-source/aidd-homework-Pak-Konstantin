@@ -1,13 +1,14 @@
 import logging
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = ""
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-me-in-production-!@#$%^&*()_+-=')
 
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 INSTALLED_APPS = [
@@ -97,7 +98,7 @@ DATABASES = {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": "investing",
         "USER": "postgres",
-        "PASSWORD": "postgres",
+        "PASSWORD": os.getenv('DB_PASSWORD', 'postgres'),
         "HOST": "localhost",
         "PORT": "5432",
     }
@@ -131,7 +132,7 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-TINKOFF_TOKEN = ""
+TINKOFF_TOKEN = os.getenv('TINKOFF_TOKEN', '')
 
 """Celery Configuration Options"""
 CELERY_TIMEZONE = "Europe/Moscow"

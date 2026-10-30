@@ -36,9 +36,7 @@ class RegistrationForm(forms.Form):
             errors = ["Введенные пароли не совпадают"]
             raise ValidationError(errors)
 
-        user = User.objects.filter(email=email)
-
-        if user:
+        if User.objects.filter(email=email).exists():
             errors = [
                 "Данный e-mail уже зарегистрирован! Введите другой e-mail или"
                 " воспользуйтесь формой авторизации."
