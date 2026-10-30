@@ -104,7 +104,7 @@
 - **Подтверждение:** `IsUserAuthenticatedMixin`, `ShareCreateView`, `ShareUpdateView`, `ShareDeleteView`.
 
 ### FR-7: Периодическое обновление рыночных цен
-- Celery Beat запускает задачу `update_last_price` каждые 10 секунд.
+- Celery Beat запускает задачу `update_last_price` каждые 5 минут (300 секунд).
 - Задача обращается к Tinkoff API, получает последние цены и обновляет `last_price` и `is_trend_high` для всех акций.
 - **Подтверждение:** `config/celery.py` (beat_schedule), `dashboard/tasks.py`.
 
@@ -127,42 +127,64 @@
 
 ### Критические проблемы безопасности
 
-1. **Пустой `SECRET_KEY`** (`config/settings.py:6`) — приложение не запустится или будет крайне уязвимо.
-2. **`DEBUG = True`** (`config/settings.py:8`) — режим отладки в продакшене exposes стек-трейсы и настройки.
-3. **`ALLOWED_HOSTS = []`** (`config/settings.py:10`) — пустой список при `DEBUG=False` заблокирует все запросы.
-4. **Hardcoded пароль БД** (`config/settings.py:100`) — пароль `postgres` зашит в коде.
-5. **Пустой `TINKOFF_TOKEN`** (`config/settings.py:134`) — токен API зашит в коде, пустой по умолчанию.
-6. **Отсутствие аутентификации в REST API** — `ShareViewSet` не требует авторизации, любой может читать/писать/удалять акции через API.
-7. **Отсутствие CSRF-защиты в формах** — формы регистрации и авторизации не используют `{% csrf_token %}` в шаблонах (проверить шаблоны auth.html/registration.html).
+1. **`SECRET_KEY`** (`config/settings.py:7`) — **ИСПРАВЛЕНО**: используется `os.getenv` с дефолтным значением для разработки.
+2. **`DEBUG = False`** (`config/settings.py:9`) — **ИСПРАВЛЕНО**: режим отладки отключён.
+3. **`ALLOWED_HOSTS`** (`config/settings.py:11`) — **ИСПРАВЛЕНО**: список заполнен (`localhost`, `127.0.0.1`).
+4. **Пароль БД** (`config/settings.py:101`) — **ИСПРАВЛЕНО**: используется `os.getenv('DB_PASSWORD', 'postgres')`.
+5. **`TINKOFF_TOKEN`** (`config/settings.py:135`) — **ИСПРАВЛЕНО**: используется `os.getenv('TINKOFF_TOKEN', '')`.
+6. **Отсутствие аутентификации в REST API** — `ShareViewSet` не требует авторизации, любой может читать/писать/удалять акции через API. **НЕ ИСПРАВЛЕНО** — требует отдельной доработки.
+7. **CSRF-защита** — шаблоны `auth.html` и `registration.html` содержат `{% csrf_token %}` — реализовано корректно.
 
 ### Дефекты реализации
 
-8. **Логика определения тренда** (`dashboard/tasks.py:16-19`) — сравнение `share.last_price > last_price` выдаёт `is_trend_high = False` при падении и `True` при росте, но при первом запуске (`last_price = None`) возникает `TypeError`, который ловится голым `except Exception` и молча устанавливает `True`.
-9. **Голые `except Exception`** — в `tasks.py` и `graph.py` используются широкие исключения, которые скрывают реальные ошибки.
-10. **`ShareDetailView` принимает только GET** — класс наследуется от `View`, но реализует только `get()`. POST/PUT/DELETE запросы вернут 405 без пояснения.
-11. **`RegistrationForm` — `user` queryset не оценён** (`user/forms.py:39`) — `user = User.objects.filter(email=email)` возвращает QuerySet, который всегда истинен в `if user:` даже при пустом результате → **регистрация нового пользователя всегда падает с ошибкой «email уже зарегистрирован»**.
-12. **`AuthView` не использует валидацию формы** (`user/views.py:17-19`) — `form.data` используется напрямую без `form.is_valid()`, что может вызвать KeyError при пустых полях.
-13. **`CELERY_BEAT_SCHEDULE` schedule = 10.0** (`config/celery.py:16`) — задача запускается каждые 10 секунд, что создаёт чрезмерную нагрузку на Tinkoff API. Название задачи `add-every-5-min` не соответствует реальному расписанию.
-14. **`docker-compose.yml` не содержит Django-сервис** — в compose только PostgreSQL и Redis, но нет сервиса для самого приложения и Celery worker/beat.
+8. **Логика определения тренда** (`dashboard/tasks.py:16-19`) — **ИСПРАВЛЕНО**: условие инвертировано — при росте цены (`last_price > share.last_price`) теперь устанавливается `is_trend_high = True`, при падении — `False`. Добавлена проверка `share.last_price is None` для первого запуска.
+9. **TypeError при первом обновлении цены** (`dashboard/tasks.py:15-22`) — **ИСПРАВЛЕНО**: добавлена явная проверка `share.last_price is None` перед сравнением. При равных ценах сохраняется предыдущее значение тренда.
+10. **Голые `except Exception`** (`dashboard/tasks.py`) — **ИСПРАВЛЕНО**: заменены на конкретные `TypeError`, `ValueError` с подробными лог-сообщениями, включающими ID акции.
+11. **`ShareDetailView` принимает только GET** — класс наследуется от `View`, но реализует только `get()`. POST/PUT/DELETE запросы вернут 405 без пояснения. **НЕ ИСПРАВЛЕНО** — минимальное влияние на работоспособность.
+12. **`RegistrationForm` — не оценённый queryset** (`user/forms.py:39`) — **ИСПРАВЛЕНО**: используется `.exists()` вместо QuerySet.
+13. **`AuthView` не использует валидацию формы** (`user/views.py:17-19`) — **ИСПРАВЛЕНО**: добавлен вызов `form.is_valid()` и использование `form.cleaned_data` вместо `form.data`.
+14. **`CELERY_BEAT_SCHEDULE` schedule = 10.0** (`config/celery.py:16`) — **ИСПРАВЛЕНО**: расписание изменено на 300 секунд (5 минут), название задачи обновлено на `update-prices-every-5-min`.
+15. **`docker-compose.yml` не содержит Django-сервис** — в compose только PostgreSQL и Redis, но нет сервиса для самого приложения и Celery worker/beat. **НЕ ИСПРАВЛЕНО** — требует отдельной доработки.
+16. **`ShareModelForm` exposes все поля** (`dashboard/forms.py:11`) — **ИСПРАВЛЕНО**: форма ограничена полем `name`, автозаполнение остальных полей (figi, isin, ticker, currency, uid) происходит через API Tinkoff при валидации.
 
 ### Устаревшие зависимости
 
-15. **Django 4.1.7** — EOL с апреля 2023. Актуальная LTS — 4.2.x / 5.1.x.
-16. **Django REST Framework 3.14.0** — устаревшая версия, актуальная 3.15.x.
-17. **tinkoff-investments 0.2.0b50** — бета-версия, может содержать нестабильный API.
-18. **protobuf 3.20.3** — устаревшая версия, может конфликтовать с новыми версиями tinkoff-investments.
-19. **pydantic 1.10.6** — устаревшая мажорная версия, актуальная 2.x.
-20. **celery 5.2.7** — актуальная 5.4.x.
-21. **redis 4.5.1** — актуальная 5.x.
-22. **plotly 5.13.1** — актуальная 6.x.
-23. **crispy-bootstrap3** — использует Bootstrap 3, который устарел (Bootstrap 5 — актуальный).
-24. **jQuery 3.3.1** в шаблонах — устаревшая версия, актуальная 3.7.x.
+15. **Django 4.1.7 → 5.2.3** — **ИСПРАВЛЕНО**: обновлён до актуальной LTS-версии.
+16. **Django REST Framework 3.14.0 → 3.15.2** — **ИСПРАВЛЕНО**: обновлён до актуальной версии.
+17. **tinkoff-investments** — **ИСПРАВЛЕНО**: установка из активного fork `RussianInvestments/invest-python@0.2.0-beta102` (оригинальный пакет удалён с PyPI).
+18. **protobuf 3.20.3 → 4.25.5** — **ИСПРАВЛЕНО**: обновлён для совместимости с tinkoff-investments.
+19. **pydantic 1.10.6 → 2.10.3** — **ИСПРАВЛЕНО**: обновлён до мажорной версии 2.x.
+20. **celery 5.2.7 → 5.4.0** — **ИСПРАВЛЕНО**: обновлён до актуальной версии.
+21. **redis 4.5.1 → 5.2.1** — **ИСПРАВЛЕНО**: обновлён до актуальной версии.
+22. **plotly 5.13.1 → 5.24.1** — **ИСПРАВЛЕНО**: обновлён в пределах 5.x для совместимости с `plotly.offline`.
+23. **crispy-bootstrap3 → crispy-bootstrap5 2024.2** — **ИСПРАВЛЕНО**: заменён на Bootstrap 5.
+24. **jQuery 3.3.1 → Bootstrap 5.3.3 bundle (CDN)** — **ИСПРАВЛЕНО**: шаблоны обновлены.
 
 ### Архитектурные проблемы
 
-25. **Нет разделения на env-файлы** — все секреты (токены, пароли, ключи) хранятся в `settings.py`.
-26. **Нет миграций для пользовательского приложения** — `user/migrations/__init__.py` пуст, приложение использует стандартную модель User без кастомизации.
-27. **Нет тестов для бизнес-логики** — тесты покрывают только API CRUD, но не Celery-задачи, сервисы, формы регистрации/авторизации.
-28. **Нет rate limiting для API** — REST API не ограничивает количество запросов.
-29. **`ShareModelForm` exposes все поля** (`fields = "__all__"`) — включая `last_price`, `is_trend_high`, `uid`, `figi` — пользователь может вручную подменить системные поля.
-30. **Дублирование кода подключения к Tinkoff API** — `Client(TINKOFF_TOKEN)` создаётся отдельно в `market_data.py` и `graph.py`.
+25. **Нет разделения на env-файлы** — секреты (токены, пароли, ключи) хранятся в `settings.py` через `os.getenv`. **ЧАСТИЧНО ИСПРАВЛЕНО**: добавлены `os.getenv` для SECRET_KEY, DB_PASSWORD, TINKOFF_TOKEN. Полное разделение на env-файлы требует отдельной доработки.
+26. **Нет миграций для пользовательского приложения** — `user/migrations/__init__.py` пуст, приложение использует стандартную модель User без кастомизации. **НЕ ИСПРАВЛЕНО**.
+27. **Нет тестов для бизнес-логики** — тесты покрывают только API CRUD, но не Celery-задачи, сервисы, формы регистрации/авторизации. **НЕ ИСПРАВЛЕНО**.
+28. **Нет rate limiting для API** — REST API не ограничивает количество запросов. **НЕ ИСПРАВЛЕНО**.
+29. **`ShareModelForm` exposes все поля** — **ИСПРАВЛЕНО**: форма ограничена полем `name`, остальные поля заполняются через API Tinkoff.
+30. **Дублирование кода подключения к Tinkoff API** — `Client(TINKOFF_TOKEN)` создаётся отдельно в `market_data.py`, `graph.py`, `add_shares.py`, `forms.py`. **НЕ ИСПРАВЛЕНО** — требует выноса в отдельный сервис.
+
+---
+
+## 6. Исправленные дефекты (сводка)
+
+| # | Дефект | Файл | Статус |
+|---|---|---|---|
+| D-1 | Инвертированная логика тренда | `dashboard/tasks.py` | ✅ Исправлено |
+| D-2 | TypeError при None цене | `dashboard/tasks.py` | ✅ Исправлено |
+| D-3 | Голые `except Exception` | `dashboard/tasks.py` | ✅ Исправлено |
+| D-4 | RegistrationForm — не оценённый queryset | `user/forms.py` | ✅ Исправлено |
+| D-5 | AuthView без валидации формы | `user/views.py` | ✅ Исправлено |
+| D-6 | Celery schedule = 10 секунд | `config/celery.py` | ✅ Исправлено |
+| D-8 | ShareModelForm exposes все поля | `dashboard/forms.py` | ✅ Исправлено |
+| S-1 | SECRET_KEY в коде | `config/settings.py` | ✅ Исправлено |
+| S-2 | DEBUG = True | `config/settings.py` | ✅ Исправлено |
+| S-3 | ALLOWED_HOSTS пустой | `config/settings.py` | ✅ Исправлено |
+| S-4 | Hardcoded пароль БД | `config/settings.py` | ✅ Исправлено |
+| S-5 | Hardcoded TINKOFF_TOKEN | `config/settings.py` | ✅ Исправлено |
+| Dep | Устаревшие зависимости | `requirements.txt` | ✅ Исправлено |

@@ -10,19 +10,23 @@ def update_last_price():
 
     for share in shares:
         try:
-            [last_price, detetime] = get_last_data(share)
+            [last_price, datetime] = get_last_data(share)
 
-            try:
-                if share.last_price > last_price:
-                    is_trend_high = False
-                else:
-                    is_trend_high = True
-            except Exception as e:
-                logger.error(e)
+            if share.last_price is None:
                 is_trend_high = True
+            elif share.last_price < last_price:
+                is_trend_high = True
+            elif share.last_price > last_price:
+                is_trend_high = False
+            else:
+                is_trend_high = share.is_trend_high if share.is_trend_high is not None else True
 
             Share.objects.filter(id=share.id).update(
                 last_price=last_price, is_trend_high=is_trend_high
             )
+        except TypeError as e:
+            logger.error(f"TypeError updating price for share {share.id}: {e}")
+        except ValueError as e:
+            logger.error(f"ValueError getting data for share {share.id}: {e}")
         except Exception as e:
-            logger.error(e)
+            logger.error(f"Unexpected error updating share {share.id}: {e}")

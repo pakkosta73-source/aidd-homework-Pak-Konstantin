@@ -15,9 +15,14 @@ class AuthView(View):
     @staticmethod
     def post(request):
         form = AuthForm(request.POST)
-        user = authenticate(
-            request, username=form.data["email"].lower(), password=form.data["password"]
-        )
+        if form.is_valid():
+            user = authenticate(
+                request,
+                username=form.cleaned_data["email"].lower(),
+                password=form.cleaned_data["password"],
+            )
+        else:
+            user = None
 
         if user is not None:
             login(request, user)
