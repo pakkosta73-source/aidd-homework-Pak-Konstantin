@@ -1,3 +1,7 @@
+---
+name: best-practices
+description: Best practices and guidelines for working with the Investing Demo project — secrets management, forms, models, API, Celery tasks, and deployment.
+---
 # Investing Demo — Best Practices
 
 **Trigger:** Use this skill before making any changes to the Investing Demo project — it contains essential guidelines for working with secrets, forms, models, API, and Celery tasks.

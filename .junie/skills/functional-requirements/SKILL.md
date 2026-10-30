@@ -1,3 +1,7 @@
+---
+name: functional-requirements
+description: Functional requirements, business rules, and implementation ambiguities for the Investing Demo application — share listing, details, CRUD, authentication, price updates, REST API, and admin panel.
+---
 # Investing Demo — Functional Requirements
 
 **Trigger:** Use this skill when implementing, modifying, or testing any feature of the Investing Demo — share listing, details, CRUD, authentication, price updates, REST API, or admin panel.

@@ -1,3 +1,7 @@
+---
+name: known-issues
+description: Known issues, security vulnerabilities, implementation defects, outdated dependencies, and architectural problems for the Investing Demo application.
+---
 # Investing Demo — Known Issues
 
 **Trigger:** Use this skill when debugging, fixing bugs, reviewing security, or refactoring the Investing Demo project. Reference before making changes that could be affected by known defects.
@@ -39,20 +43,66 @@
 ### D-8: `ShareModelForm` exposes все поля
 `dashboard/forms.py:11` — `fields = "__all__"`. Пользователь может подменить `last_price`, `is_trend_high`, `uid`, `figi`.
 
-## Устаревшие зависимости
+## Устаревшие зависимости (обновлено 30.10.2026)
 
-| Пакет | Текущая версия | Актуальная версия |
-|---|---|---|
-| Django | 4.1.7 (EOL) | 4.2.x / 5.1.x |
-| Django REST Framework | 3.14.0 | 3.15.x |
-| tinkoff-investments | 0.2.0b50 (бета) | — |
-| protobuf | 3.20.3 | Может конфликтовать с новыми tinkoff-investments |
-| pydantic | 1.10.6 | 2.x |
-| celery | 5.2.7 | 5.4.x |
-| redis | 4.5.1 | 5.x |
-| plotly | 5.13.1 | 6.x |
-| crispy-bootstrap3 | Bootstrap 3 (устарел) | Bootstrap 5 |
-| jQuery | 3.3.1 | 3.7.x |
+Все устаревшие зависимости обновлены в `requirements.txt`. Ниже приведён список произведённых изменений:
+
+| Пакет | Было | Стало | Примечание |
+|---|---|---|---|
+| Django | 4.1.7 (EOL, декабрь 2023) | 5.2.3 (LTS) | LTS до апреля 2028 |
+| Django REST Framework | 3.14.0 | 3.15.2 | |
+| pydantic | 1.10.6 | 2.10.3 | Breaking changes: v1 → v2 |
+| protobuf | 3.20.3 | 4.25.5 | Понизил для совместимости с tinkoff-investments (требует <5.0.0) |
+| grpcio | 1.51.3 | 1.68.1 | |
+| celery | 5.2.7 | 5.4.0 | |
+| kombu | 5.2.4 | 5.4.2 | |
+| amqp | 5.1.1 | 5.3.1 | |
+| billiard | 3.6.4.0 | 4.2.1 | |
+| vine | 5.0.0 | 5.1.0 | |
+| redis | 4.5.1 | 5.2.1 | |
+| plotly | 5.13.1 | 5.24.1 | Оставлен 5.x для совместимости с `plotly.offline` |
+| psycopg2-binary | 2.9.5 | 2.9.10 | |
+| asgiref | 3.6.0 | 3.8.1 | |
+| sqlparse | 0.4.3 | 0.5.2 | |
+| django-filter | 22.1 | 24.3 | |
+| django-crispy-forms | 2.0 | 2.3 | |
+| crispy-bootstrap3 | 2022.1 | crispy-bootstrap5 2024.2 | Заменён на Bootstrap 5 |
+| black | 23.1.0 | 24.8.0 | |
+| isort | 5.12.0 | 5.13.2 | |
+| click | 8.1.3 | 8.1.7 | |
+| cachetools | 5.3.0 | 5.5.0 | |
+| tenacity | 8.2.2 | 9.0.0 | |
+| typing_extensions | 4.5.0 | 4.15.0 | |
+| pytz | 2022.7.1 | 2024.2 | |
+| prompt-toolkit | 3.0.38 | 3.0.47 | |
+| platformdirs | 3.1.1 | 4.3.6 | |
+| pathspec | 0.11.1 | 0.12.1 | |
+| packaging | 23.0 | 24.2 | |
+| mypy-extensions | 1.0.0 | 1.1.0 | |
+| tomli | 2.0.1 | 2.0.2 | |
+| wcwidth | 0.2.6 | 0.2.13 | |
+| async-timeout | 4.0.2 | 5.0.1 | |
+| click-didyoumean | 0.3.0 | 0.3.1 | |
+| click-repl | 0.2.0 | 0.3.0 | |
+
+### tinkoff-investments — удалён с PyPI
+
+Пакет `tinkoff-investments` был удалён с PyPI в декабре 2025. Оригинальный репозиторий `Tinkoff/invest-python` архивирован. В `requirements.txt` указана установка из активного fork: `git+https://github.com/RussianInvestments/invest-python.git@0.2.0-beta102`.
+
+### Проблемы установки зависимостей (исправлено 30.10.2026)
+
+При установке `pip install -r requirements.txt` возникали две проблемы:
+
+1. **`tinkoff==0.1.1` недоступен на PyPI** — пакет удалён. `tinkoff-investments` зависит от `tinkoff>=0.1.1,<0.2.0`, однако в коде проекта импортируется только `tinkoff.invest` (предоставляется `tinkoff-investments`), поэтому зависимость можно игнорировать.
+2. **Конфликт protobuf** — `tinkoff-investments` требует `protobuf>=4.25.1,<5.0.0`. Понизил protobuf с 5.28.3 до 4.25.5.
+
+Для установки выполните: `pip install -r requirements.txt`.
+
+### Обновлённые шаблоны
+
+- `dashboard/templates/dashboard/base.html`: jQuery 3.3.1 + Popper.js 1.14.6 → Bootstrap 5.3.3 bundle (CDN)
+- `user/templates/user/base.html`: локальный Bootstrap 5.1.3 → Bootstrap 5.3.3 (CDN)
+- `config/settings.py`: `crispy_bootstrap3` → `crispy_bootstrap5`, `CRISPY_TEMPLATE_PACK = "bootstrap5"`
 
 ## Архитектурные проблемы
 

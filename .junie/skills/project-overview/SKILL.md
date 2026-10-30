@@ -1,3 +1,7 @@
+---
+name: project-overview
+description: Project overview, tech stack, architecture, data model, and project structure for the Investing Demo Django application.
+---
 # Investing Demo — Project Overview
 
 **Trigger:** Use this skill when working with the Investing Demo project — understanding its architecture, tech stack, data model, or project structure. Reference it before making changes to models, views, services, or configuration.

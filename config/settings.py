@@ -19,15 +19,15 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "crispy_forms",
-    "crispy_bootstrap3",
+    "crispy_bootstrap5",
     "dashboard",
     "user",
     "rest_framework",
     "django_filters",
 ]
 
-CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap3"
-CRISPY_TEMPLATE_PACK = "bootstrap3"
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
