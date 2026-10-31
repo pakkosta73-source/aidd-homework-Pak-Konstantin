@@ -8,14 +8,14 @@ description: Project overview, tech stack, architecture, data model, and project
 
 ## Технологический стек
 
-- **Backend:** Python, Django 4.1.7
+- **Backend:** Python, Django 5.2.3 (LTS)
 - **База данных:** PostgreSQL (psycopg2-binary)
-- **Асинхронные задачи:** Celery 5.2.7 + Celery Beat (планировщик)
+- **Асинхронные задачи:** Celery 5.4.0 + Celery Beat (планировщик)
 - **Брокер сообщений:** Redis
-- **REST API:** Django REST Framework 3.14.0, django-filter
-- **Внешний API:** tinkoff-investments (Tinkoff Invest API) — получение рыночных данных
+- **REST API:** Django REST Framework 3.15.2, django-filter
+- **Внешний API:** tinkoff-investments (Tinkoff Invest API) — получение рыночных данных; есть режим заглушки `USE_TINKOFF_MOCK` через `dashboard/services/tinkoff_client.py`
 - **Визуализация:** Plotly (графики исторических цен)
-- **Frontend:** Django Templates, Bootstrap 3 (crispy-bootstrap3), jQuery, Font Awesome
+- **Frontend:** Django Templates, Bootstrap 5.3.3 (crispy-bootstrap5)
 - **Инфраструктура:** Docker Compose (PostgreSQL + Redis)
 - **Форматирование кода:** Black, isort
 
@@ -34,7 +34,9 @@ description: Project overview, tech stack, architecture, data model, and project
 | `dashboard/forms.py` | Django-форма для CRUD акций |
 | `dashboard/admin.py` | Регистрация модели в Django Admin |
 | `dashboard/management/commands/add_shares.py` | Загрузка списка акций из Tinkoff API |
-| `dashboard/templates/dashboard/` | HTML-шаблоны: base, list, detail, create, delete |
+| `dashboard/templates/dashboard/` | HTML-шаблоны: base, list, detail, create, delete, watchlist, notification_list |
+| `dashboard/tests.py` | Тесты REST API CRUD |
+| `dashboard/test_watchlist.py` | Тесты логики мониторинга: условия, дедупликация, перевзвод |
 | `user/` | Приложение аутентификации: регистрация, вход, выход |
 | `user/forms.py` | Формы регистрации и авторизации |
 | `user/views.py` | Views для login, registration, logout |
@@ -63,7 +65,31 @@ description: Project overview, tech stack, architecture, data model, and project
 
 Стандартная модель `django.contrib.auth.models.User`. Email используется как логин (username).
 
-Связей между `Share` и `User` нет — модели независимы.
+### `WatchlistEntry` (dashboard/models.py)
+
+Личный список наблюдения пользователя.
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `user` | FK → User | Владелец записи |
+| `share` | FK → Share | Отслеживаемая акция |
+| `target_price` | FloatField | Целевой ценовой уровень |
+| `condition` | CharField(10): `above` / `below` | Направление условия |
+| `notified` | BooleanField, default False | Флаг дедупликации уведомления |
+| `created_at` | DateTimeField, auto_now_add | Время создания |
+
+Уникальность пары `(user, share)` — одну акцию нельзя добавить в список дважды.
+
+### `Notification` (dashboard/models.py)
+
+Внутрисайтовое уведомление о достижении целевого уровня.
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `user` | FK → User | Получатель |
+| `share` | FK → Share | Акция |
+| `message` | Text | Текст уведомления |
+| `created_at` | DateTimeField, auto_now_add | Время создания, сортировка по убыванию |
 
 ## Ключевые компоненты
 
@@ -77,4 +103,8 @@ description: Project overview, tech stack, architecture, data model, and project
 | Celery-задача | `dashboard/tasks.py:7-28` | Фоновое обновление цен |
 | REST API | `dashboard/api/v1/` | Программный доступ к акциям |
 | Management-команда | `dashboard/management/commands/add_shares.py` | Загрузка каталога из API |
+| Watchlist-views | `dashboard/views.py:91-133` | Список наблюдения, добавление, удаление, перевзвод (только авторизованные) |
+| NotificationListView | `dashboard/views.py:136-144` | Список уведомлений пользователя |
+| Проверка условий | `dashboard/tasks.py:18-54` | `_check_watchlist_conditions` — вызывается из `update_last_price` после обновления цен |
+| Tinkoff-клиент | `dashboard/services/tinkoff_client.py` | Единая точка подключения к API, режим `USE_TINKOFF_MOCK` |
 | Admin | `dashboard/admin.py:6-19` | Административная панель |

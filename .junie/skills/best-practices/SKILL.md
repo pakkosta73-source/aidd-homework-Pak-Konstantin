@@ -34,9 +34,9 @@ description: Best practices and guidelines for working with the Investing Demo p
 - `AuthView` должен использовать `form.is_valid()` перед обращением к `form.data`.
 
 ### Тестирование
-- Существующие тесты покрывают только API CRUD.
-- При изменении бизнес-логики добавьте тесты для Celery-задач, сервисов и форм.
-- Используйте фикстуры для мокирования Tinkoff API.
+- Тесты API CRUD — `dashboard/tests.py`; тесты логики мониторинга (условия, дедупликация, перевзвод алертов) — `dashboard/test_watchlist.py`.
+- При изменении бизнес-логики добавляйте тесты для Celery-задач, сервисов и форм.
+- Используйте фикстуры для мокирования Tinkoff API (или режим `USE_TINKOFF_MOCK`).
 
 ### Инфраструктура
 - `docker-compose.yml` содержит только PostgreSQL и Redis — для полного запуска нужен сервис приложения.

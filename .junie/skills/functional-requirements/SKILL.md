@@ -1,10 +1,10 @@
 ---
 name: functional-requirements
-description: Functional requirements, business rules, and implementation ambiguities for the Investing Demo application — share listing, details, CRUD, authentication, price updates, REST API, and admin panel.
+description: Functional requirements, business rules, and implementation ambiguities for the Investing Demo application — share listing, details, CRUD, authentication, price updates, REST API, admin panel, and personal stock monitoring (watchlist, price targets, notifications).
 ---
 # Investing Demo — Functional Requirements
 
-**Trigger:** Use this skill when implementing, modifying, or testing any feature of the Investing Demo — share listing, details, CRUD, authentication, price updates, REST API, or admin panel.
+**Trigger:** Use this skill when implementing, modifying, or testing any feature of the Investing Demo — share listing, details, CRUD, authentication, price updates, REST API, admin panel, or personal monitoring (watchlist, price targets, notifications).
 
 ## Назначение приложения
 
@@ -52,6 +52,10 @@ Management-команда `add_shares` загружает список акци�
 Администратор может просматривать, искать и редактировать акции. Поиск по `figi`, `isin`, `name`, `ticker`.
 **Реализация:** `dashboard/admin.py`.
 
+### FR-11: Персональный мониторинг акций
+Авторизованный пользователь формирует личный список наблюдения: добавляет акцию, задаёт целевую цену и направление условия («выше цели» / «ниже цели»). Система автоматически отслеживает достижение условий после обновления цен и создаёт внутрисайтовые уведомления. Есть кнопка ручного перевзвода алерта.
+**Реализация:** `WatchlistEntry`, `Notification` (`dashboard/models.py`), `WatchlistListView` / `WatchlistCreateView` / `WatchlistDeleteView` / `WatchlistResetView`, `NotificationListView` (`dashboard/views.py:91-144`), проверка условий `_check_watchlist_conditions` (`dashboard/tasks.py:18-54`), маршруты `/watchlist/`, `/notifications/`.
+
 ## Бизнес-правила
 
 ### BP-1: Уникальность идентификаторов акции
@@ -83,6 +87,15 @@ Management-команда `add_shares` загружает список акци�
 
 ### BP-10: REST API — пагинация и фильтрация
 LimitOffset-пагинация (100 записей), фильтрация по `name`/`ticker`, сортировка, поиск по `name`.
+
+### BP-11: Дедупликация уведомлений об одном событии
+Уведомление о достижении заданного уровня отправляется **один раз**: запись наблюдения помечается `notified=True`, и проверка выбирает только записи с `notified=False`. Перевзвод — только вручную (`POST /watchlist/reset/<pk>/`, кнопка «сбросить»); изменение цели само по себе флаг не сбрасывает.
+
+### BP-12: Уникальность записи наблюдения
+Пара `(user, share)` уникальна в `WatchlistEntry` — одну акцию нельзя добавить в личный список дважды.
+
+### BP-13: Проверка условия по направлению
+`above`: `last_price >= target_price`; `below`: `last_price <= target_price`. Цена `None` пропускается (проверка не выполняется).
 
 ## Неоднозначности реализации
 

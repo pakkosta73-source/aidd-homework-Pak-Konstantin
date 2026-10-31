@@ -1,0 +1,32 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}
+<title>Уведомления</title>
+{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Уведомления</h1>
+
+{% if notifications %}
+<div class="list-group">
+    {% for notification in notifications %}
+    <div class="list-group-item list-group-item-action">
+        <div class="d-flex w-100 justify-content-between">
+            <h5 class="mb-1">
+                <a href="{% url 'dashboard:detail' notification.share.pk %}">
+                    {{ notification.share.ticker }} — {{ notification.share.name }}
+                </a>
+            </h5>
+            <small class="text-muted">{{ notification.created_at|date:"d.m.Y H:i" }}</small>
+        </div>
+        <p class="mb-1">{{ notification.message }}</p>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info">
+    <p>У вас пока нет уведомлений.</p>
+    <p>Добавьте акции в <a href="{% url 'dashboard:watchlist' %}">список наблюдения</a> и установите целевые цены, чтобы получать уведомления.</p>
+</div>
+{% endif %}
+{% endblock %}

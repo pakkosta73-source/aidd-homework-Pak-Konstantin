@@ -1,7 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 
-from .models import Share
+from .models import Share, WatchlistEntry
 from .services.tinkoff_client import get_client
 
 
@@ -50,3 +50,18 @@ class ShareModelForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
+
+
+class WatchlistEntryForm(forms.ModelForm):
+    """Форма добавления акции в список наблюдения"""
+
+    class Meta:
+        model = WatchlistEntry
+        fields = ["share", "target_price", "condition"]
+        widgets = {
+            "share": forms.Select(attrs={"class": "form-select"}),
+            "target_price": forms.NumberInput(
+                attrs={"class": "form-control", "step": "0.01", "min": "0"}
+            ),
+            "condition": forms.Select(attrs={"class": "form-select"}),
+        }

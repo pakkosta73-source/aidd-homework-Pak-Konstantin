@@ -1,10 +1,11 @@
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.shortcuts import redirect
+from django.db import transaction
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView, View
 
-from .forms import ShareModelForm
-from .models import Share
+from .forms import ShareModelForm, WatchlistEntryForm
+from .models import Notification, Share, WatchlistEntry
 from .services.graph import get_graph
 from .services.market_data import get_last_data
 
@@ -85,3 +86,59 @@ class ShareDeleteView(IsUserAuthenticatedMixin, DeleteView):
     model = Share
     template_name = "dashboard/delete.html"
     success_url = SUCCESS_URL
+
+
+class WatchlistListView(IsUserAuthenticatedMixin, ListView):
+    """Список наблюдения пользователя"""
+
+    model = WatchlistEntry
+    template_name = "dashboard/watchlist.html"
+    context_object_name = "watchlist_entries"
+
+    def get_queryset(self):
+        return WatchlistEntry.objects.filter(user=self.request.user).select_related("share")
+
+
+class WatchlistCreateView(IsUserAuthenticatedMixin, CreateView):
+    """Добавление акции в список наблюдения"""
+
+    model = WatchlistEntry
+    template_name = "dashboard/watchlist_form.html"
+    form_class = WatchlistEntryForm
+    success_url = reverse_lazy("dashboard:watchlist")
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        return super().form_valid(form)
+
+
+class WatchlistDeleteView(IsUserAuthenticatedMixin, DeleteView):
+    """Удаление акции из списка наблюдения"""
+
+    model = WatchlistEntry
+    template_name = "dashboard/watchlist_confirm_delete.html"
+    success_url = reverse_lazy("dashboard:watchlist")
+
+    def get_queryset(self):
+        return WatchlistEntry.objects.filter(user=self.request.user)
+
+
+class WatchlistResetView(IsUserAuthenticatedMixin, View):
+    """Сброс флага уведомления для повторной активации"""
+
+    def post(self, request, pk):
+        entry = get_object_or_404(WatchlistEntry, pk=pk, user=request.user)
+        entry.notified = False
+        entry.save(update_fields=["notified"])
+        return redirect("dashboard:watchlist")
+
+
+class NotificationListView(IsUserAuthenticatedMixin, ListView):
+    """Список уведомлений пользователя"""
+
+    model = Notification
+    template_name = "dashboard/notification_list.html"
+    context_object_name = "notifications"
+
+    def get_queryset(self):
+        return Notification.objects.filter(user=self.request.user).select_related("share")

@@ -1,0 +1,77 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}
+<title>Список наблюдения</title>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Список наблюдения</h1>
+    <a href="{% url 'dashboard:watchlist_add' %}" class="btn btn-primary">Добавить акцию</a>
+</div>
+
+{% if watchlist_entries %}
+<table class="table table-striped table-hover">
+    <thead>
+        <tr>
+            <th>Акция</th>
+            <th>Текущая цена</th>
+            <th>Целевая цена</th>
+            <th>Условие</th>
+            <th>Статус</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for entry in watchlist_entries %}
+        <tr>
+            <td>
+                <a href="{% url 'dashboard:detail' entry.share.pk %}">
+                    {{ entry.share.ticker }} — {{ entry.share.name }}
+                </a>
+            </td>
+            <td>
+                {% if entry.share.last_price %}
+                    {{ entry.share.last_price|floatformat:2 }}
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+            <td>{{ entry.target_price|floatformat:2 }}</td>
+            <td>
+                {% if entry.condition == "above" %}
+                    Цена выше цели
+                {% else %}
+                    Цена ниже цели
+                {% endif %}
+            </td>
+            <td>
+                {% if entry.notified %}
+                    <span class="badge bg-success">Уведомлено</span>
+                {% else %}
+                    <span class="badge bg-warning text-dark">Ожидание</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if entry.notified %}
+                <form action="{% url 'dashboard:watchlist_reset' entry.pk %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">Сбросить</button>
+                </form>
+                {% endif %}
+                <form action="{% url 'dashboard:watchlist_remove' entry.pk %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Удалить</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-info">
+    <p>Ваш список наблюдения пуст.</p>
+    <a href="{% url 'dashboard:watchlist_add' %}" class="btn btn-primary">Добавить акцию</a>
+</div>
+{% endif %}
+{% endblock %}
