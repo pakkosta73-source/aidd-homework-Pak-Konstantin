@@ -20,9 +20,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-dev-only-key")
 DEBUG = _env_flag("DEBUG", default="True")
 
 ALLOWED_HOSTS = [
-    host.strip()
-    for host in os.getenv("ALLOWED_HOSTS", "").split(",")
-    if host.strip()
+    host.strip() for host in os.getenv("ALLOWED_HOSTS", "").split(",") if host.strip()
 ] or []
 if DEBUG and not ALLOWED_HOSTS:
     # Для локальной разработки (в продакшене список задаётся переменной ALLOWED_HOSTS в .env)

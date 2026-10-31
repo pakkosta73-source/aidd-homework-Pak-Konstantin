@@ -8,7 +8,11 @@
 
     <form method="post">
         {% csrf_token %}
-        <p>Вы уверены, что хотите удалить инструмент: <b>"{{ share.name }}"</b> ?</p>
+        {% if share %}
+            <p>Вы уверены, что хотите удалить инструмент: <b>"{{ share.name }}"</b> ?</p>
+        {% else %}
+            <p>Вы уверены, что хотите удалить запись наблюдения: <b>"{{ watchlistentry }}"</b> ?</p>
+        {% endif %}
         <input type="submit" class="btn btn-sm btn-outline-danger rounded-pill" value="Удалить" />
     </form>
 

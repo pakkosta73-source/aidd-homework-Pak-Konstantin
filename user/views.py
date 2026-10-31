@@ -15,22 +15,25 @@ class AuthView(View):
     @staticmethod
     def post(request):
         form = AuthForm(request.POST)
-        user = authenticate(
-            request, username=form.data["email"].lower(), password=form.data["password"]
-        )
-
-        if user is not None:
-            login(request, user)
-            return redirect("dashboard:index")
-        else:
-            return render(
+        # Ранее данные брались напрямую из form.data без form.is_valid():
+        # при отсутствии поля POST падал KeyError вместо показа ошибки.
+        if form.is_valid():
+            # Email уже нормализован в AuthForm.clean_email (lower + strip).
+            user = authenticate(
                 request,
-                "user/auth.html",
-                {
-                    "form": form,
-                    "error": "Неверный логин или пароль! Повторите попытку.",
-                },
+                username=form.cleaned_data["email"],
+                password=form.cleaned_data["password"],
             )
+
+            if user is not None:
+                login(request, user)
+                return redirect("dashboard:index")
+
+        return render(
+            request,
+            "user/auth.html",
+            {"form": form, "error": "Неверный логин или пароль! Повторите попытку."},
+        )
 
 
 class RegistrationView(View):
@@ -48,10 +51,17 @@ class RegistrationView(View):
             login(request, user)
             return redirect("dashboard:index")
         else:
+            # Ранно разобралось только form.errors["__all__"]: при ошибке
+            # уровня поля (например, некорректный формат e-mail) не попадал
+            # KeyError и пользователь получал 500. Берём первую доступную
+            # ошибку вне зависимости от её уровня.
+            errors = list(form.non_field_errors())
+            if not errors:
+                errors = [e for errs in form.errors.values() for e in errs]
             return render(
                 request,
                 "user/registration.html",
-                {"form": form, "error": form.errors["__all__"].data[0].message},
+                {"form": form, "error": str(errors[0])},
             )
 
 

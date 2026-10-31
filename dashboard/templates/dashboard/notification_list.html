@@ -1,0 +1,24 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}
+    <title>Уведомления</title>
+{% endblock %}
+
+{% block content %}
+
+<h5>Уведомления</h5>
+
+{% if notifications %}
+    <ul class="list-group">
+        {% for notification in notifications %}
+            <li class="list-group-item">
+                {{ notification.message }}
+                <small class="text-muted d-block">{{ notification.created_at }}</small>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>Уведомлений пока нет</p>
+{% endif %}
+
+{% endblock %}

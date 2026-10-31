@@ -1,0 +1,90 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}
+    <title>Список наблюдения</title>
+{% endblock %}
+
+{% block content %}
+{% load crispy_forms_tags %}
+
+<h5>Мои наблюдения</h5>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-info">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+{% if entries %}
+    <table class="table table-striped align-middle">
+        <thead>
+        <tr>
+            <th scope="col">Тикер</th>
+            <th scope="col">Название</th>
+            <th scope="col">Текущая цена</th>
+            <th scope="col">Условие</th>
+            <th scope="col">Целевая цена</th>
+            <th scope="col">Статус</th>
+            <th scope="col">Управление</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for entry in entries %}
+            <tr>
+                <td><a href="{% url 'dashboard:detail' entry.share_id %}">{{ entry.share.ticker }}</a></td>
+                <td>{{ entry.share.name }}</td>
+                <td>
+                    {% if entry.share.last_price is not None %}
+                        {{ entry.share.last_price|floatformat:"-2" }} {{ entry.share.currency }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                <td>
+                    {% if entry.condition == 'above' %}
+                        выше цели (&ge;)
+                    {% else %}
+                        ниже цели (&le;)
+                    {% endif %}
+                </td>
+                <td>{{ entry.target_price|floatformat:"-2" }}</td>
+                <td>
+                    {% if entry.notified %}
+                        <span class="badge bg-success">Сработало, уведомление отправлено</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Отслеживается</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <form method="post" action="{% url 'dashboard:watchlist-reset' entry.id %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-primary" {% if not entry.notified %}disabled{% endif %}>
+                            Сбросить
+                        </button>
+                    </form>
+                    <a href="{% url 'dashboard:watchlist-delete' entry.id %}" class="btn btn-sm btn-outline-danger">
+                        Удалить
+                    </a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>Список наблюдения пуст</p>
+{% endif %}
+
+<div class="row mt-4">
+    <div class="col-6">
+        <h5>Добавить наблюдение</h5>
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+                {{ field|as_crispy_field }}
+            {% endfor %}
+            <button class="btn btn-primary mt-2" type="submit">Добавить</button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

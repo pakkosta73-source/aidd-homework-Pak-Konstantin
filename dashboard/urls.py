@@ -1,11 +1,16 @@
 from django.urls import include, path
 
 from dashboard.views import (
+    NotificationListView,
     ShareCreateView,
     ShareDeleteView,
     ShareDetailView,
     ShareListView,
     ShareUpdateView,
+    WatchlistCreateView,
+    WatchlistDeleteView,
+    WatchlistListView,
+    WatchlistResetView,
 )
 
 app_name = "dashboard"
@@ -17,4 +22,17 @@ urlpatterns = [
     path("update/<int:pk>", ShareUpdateView.as_view(), name="update"),
     path("delete/<int:pk>", ShareDeleteView.as_view(), name="delete"),
     path("api/", include("dashboard.api.urls")),
+    path("watchlist", WatchlistListView.as_view(), name="watchlist"),
+    path("watchlist/create", WatchlistCreateView.as_view(), name="watchlist-create"),
+    path(
+        "watchlist/delete/<int:pk>",
+        WatchlistDeleteView.as_view(),
+        name="watchlist-delete",
+    ),
+    path(
+        "watchlist/reset/<int:pk>",
+        WatchlistResetView.as_view(),
+        name="watchlist-reset",
+    ),
+    path("notifications", NotificationListView.as_view(), name="notifications"),
 ]
