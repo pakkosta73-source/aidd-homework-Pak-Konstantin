@@ -1,0 +1,7 @@
+.stub-readme
+pyproject.toml
+tinkoff/__init__.py
+tinkoff.egg-info/PKG-INFO
+tinkoff.egg-info/SOURCES.txt
+tinkoff.egg-info/dependency_links.txt
+tinkoff.egg-info/top_level.txt

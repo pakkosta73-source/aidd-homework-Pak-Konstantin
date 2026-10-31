@@ -4,7 +4,7 @@
 docker-compose -f docker-compose.yml up
 
 # Tinkoff Invest API
-# TINKOFF_TOKEN указывается в config/settings.py
+# TINKOFF_TOKEN задаётся в файле .env (шаблон — .env.example); настройки читаются через python-dotenv
 
 # Первоначальная загрузка списка акций
 python manage.py add_shares

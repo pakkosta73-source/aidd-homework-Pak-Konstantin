@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tinkoff"
+version = "0.1.1"
+description = "Stub package for tinkoff-investments compatibility"
+readme = ".stub-readme"
+# Пустые зависимости: реальную функциональность предоставляет tinkoff-investments
+dependencies = []
+
+[tool.setuptools]
+packages = ["tinkoff"]

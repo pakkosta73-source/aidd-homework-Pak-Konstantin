@@ -1,0 +1,16 @@
+Metadata-Version: 2.4
+Name: tinkoff
+Version: 0.1.1
+Summary: Stub package for tinkoff-investments compatibility
+
+tinkoff-stub
+============
+
+Пакет-заглушка для удовлетворения зависимости ``tinkoff>=0.1.1,<0.2.0`` библиотеки
+``tinkoff-investments`` (форк RussianInvestments/invest-python).
+
+Реальная функциональность ``tinkoff.invest`` предоставляется пакетом
+``tinkoff-investments``, который устанавливает код в тот же namespace ``tinkoff``.
+
+Устанавливается из локального каталога ``./tinkoff-stub`` (см. requirements.txt),
+поскольку оригинальный пакет ``tinkoff==0.1.1`` удалён с PyPI (декабрь 2025).
